@@ -30,20 +30,31 @@ OctoFit Tracker is a three-tier application for a school fitness program. The st
 
 Record your plan here before editing code.
 
-- Presentation tier decision:
-- Logic tier decision:
-- Data tier decision:
-- Activity tracking approach:
-- Team management approach:
-- Leaderboard approach:
-- Workout suggestions approach:
+- Presentation tier decision: Use React routes and components under `octofit-tracker/frontend/src` to fetch and render each capability through a shared API client. Keep loading, empty, error, and success states accessible, with Bootstrap for presentation only.
+- Logic tier decision: Use Express routes under `octofit-tracker/backend/src` to validate `/api/*` requests, coordinate Mongoose models, and return deliberate JSON `4xx` responses for invalid IDs or missing records.
+- Data tier decision: Define Mongoose schemas in `octofit-tracker/backend/src/models` with required fields and safe defaults, and keep representative seed data idempotent in `octofit-tracker/backend/src/scripts/seed.ts`.
+- Activity tracking approach: Validate `userId` and `teamId` before querying, reject malformed or nonexistent references with a `4xx`, and create activities with a computed positive `points` value and `occurredAt` timestamp.
+- Team management approach: Require `name` and `mascot`, default `members` to an empty array, and expose team membership through both POST and GET responses.
+- Leaderboard approach: Aggregate activity `points` by team, sort teams by descending `totalPoints`, and assign each result a 1-based rank.
+- Workout suggestions approach: Find the user by email, select a focus from the user's fitness goal or recent activity type, order matching workouts first, and include a reason referencing that activity or goal. Return `404` for an unknown email.
 
 ## Test plan
 
 Record the commands you run and what each failure means.
 
+- Install backend dependencies: `npm ci --prefix octofit-tracker/backend`
+  - Restore the locked backend dependencies before testing. A clean install should complete without a dependency-resolution error.
+- Install frontend dependencies: `npm ci --prefix octofit-tracker/frontend`
+  - Restore the locked frontend dependencies before testing. A clean install should complete without a dependency-resolution error.
+- Backend baseline command: `npm test --prefix octofit-tracker/backend`
+  - Run both backend contract suites from the current starter code. The baseline is 8 failures and 1 passing seed test: 4 data-contract failures and 4 API-contract failures.
 - Data-tier command: `npm run test:data --prefix octofit-tracker/backend`
+  - Current baseline: 4 of 5 tests fail because the `User`, `Team`, `Activity`, and `Workout` schemas lack required validation. The idempotent seed test passes.
 - API command: `npm run test:api --prefix octofit-tracker/backend`
-- Frontend command: `npm test --prefix octofit-tracker/frontend`
+  - Current baseline: 4 of 4 tests fail. Activity and team creation need route implementation, leaderboard needs point aggregation and sorting, and workout suggestions need user/activity matching plus a reason.
+- Frontend baseline command: `npm test --prefix octofit-tracker/frontend`
+  - Run the presentation contract suite from the current starter code. The baseline is 15 of 15 tests failing because the routes still show `Implementation pending` and need API fetches and accessible loading, success, empty, and error states.
 - Backend build command: `npm run build --prefix octofit-tracker/backend`
+  - Run after schema and route implementation to catch TypeScript and server compilation errors.
 - Frontend build command: `npm run build --prefix octofit-tracker/frontend`
+  - Run after presentation implementation to catch TypeScript and Vite build errors.
