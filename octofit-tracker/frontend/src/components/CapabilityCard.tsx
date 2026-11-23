@@ -1,4 +1,65 @@
-type Props = { title: string; description: string };
-export function CapabilityCard({ title, description }: Props) {
-  return <section className="card h-100"><div className="card-body"><h2 className="h4">{title}</h2><p>{description}</p><p role="status">Implementation pending</p></div></section>;
+import { useEffect, useState } from 'react';
+import { getJson } from '../api/client.js';
+
+type Props<T> = {
+  title: string;
+  description: string;
+  endpoint: string;
+  responseKey: string;
+  emptyText: string;
+  renderItem: (item: T, index: number) => React.ReactNode;
+};
+
+export function CapabilityCard<T>({
+  title,
+  description,
+  endpoint,
+  responseKey,
+  emptyText,
+  renderItem,
+}: Props<T>) {
+  const [items, setItems] = useState<T[] | null>(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+    setItems(null);
+    setError('');
+
+    getJson<Record<string, T[]>>(endpoint)
+      .then((data) => {
+        if (active) setItems(data[responseKey] ?? []);
+      })
+      .catch((requestError: unknown) => {
+        if (active) {
+          setError(requestError instanceof Error ? requestError.message : 'Unable to load data');
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [endpoint, responseKey]);
+
+  return (
+    <section className="card h-100">
+      <div className="card-body">
+        <h2 className="h4">{title}</h2>
+        <p>{description}</p>
+        {error ? (
+          <p role="alert" className="text-danger">Error: {error}</p>
+        ) : items === null ? (
+          <p role="status">Loading {title.toLowerCase()}...</p>
+        ) : items.length === 0 ? (
+          <p>{emptyText}</p>
+        ) : (
+          <ul className="list-group list-group-flush">
+            {items.map((item, index) => (
+              <li className="list-group-item" key={index}>{renderItem(item, index)}</li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
 }
