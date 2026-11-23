@@ -1,20 +1,18 @@
 import { useEffect, useState } from 'react';
-import { getJson } from '../api/client.js';
+import type { ReactNode } from 'react';
 
 type Props<T> = {
   title: string;
   description: string;
-  endpoint: string;
-  responseKey: string;
+  load: () => Promise<T[]>;
   emptyText: string;
-  renderItem: (item: T, index: number) => React.ReactNode;
+  renderItem: (item: T, index: number) => ReactNode;
 };
 
 export function CapabilityCard<T>({
   title,
   description,
-  endpoint,
-  responseKey,
+  load,
   emptyText,
   renderItem,
 }: Props<T>) {
@@ -26,9 +24,9 @@ export function CapabilityCard<T>({
     setItems(null);
     setError('');
 
-    getJson<Record<string, T[]>>(endpoint)
+    load()
       .then((data) => {
-        if (active) setItems(data[responseKey] ?? []);
+        if (active) setItems(data);
       })
       .catch((requestError: unknown) => {
         if (active) {
@@ -39,7 +37,7 @@ export function CapabilityCard<T>({
     return () => {
       active = false;
     };
-  }, [endpoint, responseKey]);
+  }, [load]);
 
   return (
     <section className="card h-100">
